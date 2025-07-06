@@ -1,12 +1,12 @@
-#include<bits/stdc++.h>
-#include<conio.h> 
-#include<windows.h>
+#include <bits/stdc++.h>
+#include <conio.h>       // for kbhit(), getch()
+#include <windows.h>     // for console control
 
 using namespace std;
 
 #define MAX_LENGTH 1000
 
-//Directions
+// Direction constants
 const char DIR_UP = 'U';
 const char DIR_DOWN = 'D';
 const char DIR_LEFT = 'L';
@@ -14,8 +14,7 @@ const char DIR_RIGHT = 'R';
 
 int consoleWidth, consoleHeight;
 
-void initScreen()
-{
+void initScreen() {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(hConsole, &csbi);
@@ -23,212 +22,185 @@ void initScreen()
     consoleWidth = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 }
 
-struct Point{
+struct Point {
     int xCoord;
     int yCoord;
-    Point(){
-    }
-    Point(int x, int y)
-    {
+
+    Point() {}
+
+    Point(int x, int y) {
         xCoord = x;
         yCoord = y;
     }
 };
 
-
-class Snake{
+class Snake {
     int length;
     char direction;
+
 public:
     Point body[MAX_LENGTH];
-    Snake(int x, int y)
-    {
-       length = 1;
-       body[0] = Point(x,y);
-       direction = DIR_RIGHT;
+
+    Snake(int x, int y) {
+        length = 1;
+        body[0] = Point(x, y);
+        direction = DIR_RIGHT;
     }
 
-    int getLength(){
+    int getLength() {
         return length;
     }
 
-    void changeDirection(char newDirection){
-        if(newDirection == DIR_UP && direction != DIR_DOWN)
-        {
-            direction = newDirection;
-        }
-        else if(newDirection == DIR_DOWN && direction != DIR_UP)
-        {
-            direction = newDirection;
-        }
-        else if(newDirection == DIR_LEFT && direction != DIR_RIGHT)
-        {
-            direction = newDirection;
-        }
-        else if(newDirection == DIR_RIGHT && direction != DIR_LEFT)
-        {
-            direction = newDirection;
+    void changeDirection(char newDir) {
+        if ((newDir == DIR_UP && direction != DIR_DOWN) ||
+            (newDir == DIR_DOWN && direction != DIR_UP) ||
+            (newDir == DIR_LEFT && direction != DIR_RIGHT) ||
+            (newDir == DIR_RIGHT && direction != DIR_LEFT)) {
+            direction = newDir;
         }
     }
 
-
-    bool move(Point food){
-
-        for(int i= length-1;i>0;i--)  // lenght = 4
-        {
-            body[i] = body[i-1];
+    bool move(Point food) {
+        for (int i = length - 1; i > 0; i--) {
+            body[i] = body[i - 1];
         }
 
-        switch(direction)
-        {
-            int val;
+        switch (direction) {
             case DIR_UP:
-                val = body[0].yCoord;
-                body[0].yCoord = val-1;
+                body[0].yCoord -= 1;
                 break;
             case DIR_DOWN:
-                val = body[0].yCoord;
-                body[0].yCoord = val+1;
+                body[0].yCoord += 1;
                 break;
             case DIR_RIGHT:
-                val = body[0].xCoord;
-                body[0].xCoord = val+1;
+                body[0].xCoord += 1;
                 break;
             case DIR_LEFT:
-                val = body[0].xCoord;
-                body[0].xCoord = val-1;
+                body[0].xCoord -= 1;
                 break;
-
         }
 
-        //snake bites itself
-        for(int i=1;i<length;i++)
-        {
-            if(body[0].xCoord == body[i].xCoord && body[0].yCoord == body[i].yCoord)
-            {
+        // Check self-collision
+        for (int i = 1; i < length; i++) {
+            if (body[0].xCoord == body[i].xCoord && body[0].yCoord == body[i].yCoord) {
                 return false;
             }
         }
 
-        //snake eats food
-        if(food.xCoord == body[0].xCoord && food.yCoord == body[0].yCoord)
-        {
-            body[length] = Point(body[length-1].xCoord, body[length-1].yCoord);
+        // Check food collision
+        if (body[0].xCoord == food.xCoord && body[0].yCoord == food.yCoord) {
+            body[length] = body[length - 1];
             length++;
         }
 
         return true;
-
     }
 };
 
-
-class Board{
-    Snake *snake;
-    const char SNAKE_BODY = 'O';
+class Board {
+    Snake* snake;
     Point food;
-    const char FOOD = 'o';
     int score;
+
+    const char SNAKE_BODY = 'O';
+    const char FOOD = 'o';
+
 public:
-    Board(){
+    Board() {
         spawnFood();
-        snake = new Snake(10,10);
+        snake = new Snake(10, 10);
         score = 0;
     }
 
-    ~Board(){
+    ~Board() {
         delete snake;
     }
 
-    int getScore(){
+    int getScore() {
         return score;
     }
 
-    void spawnFood(){
+    void gotoxy(int x, int y) {
+        COORD coord = { static_cast<SHORT>(x), static_cast<SHORT>(y) };
+        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+    }
+
+    void spawnFood() {
         int x = rand() % consoleWidth;
         int y = rand() % consoleHeight;
         food = Point(x, y);
     }
 
-    void displayCurrentScore(){
-        gotoxy(consoleWidth/2,0);
-        cout<<"Current Score : "<< score;
+    void displayCurrentScore() {
+        gotoxy(consoleWidth / 2, 0);
+        cout << "Current Score: " << score;
     }
 
-    void gotoxy(int x, int y)
-    {
-        COORD coord;
-        coord.X = x;
-        coord.Y = y;
-        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),coord);
-    }
-
-    void draw(){
+    void draw() {
         system("cls");
-        for(int i=0;i<snake->getLength();i++)
-        {
+        for (int i = 0; i < snake->getLength(); i++) {
             gotoxy(snake->body[i].xCoord, snake->body[i].yCoord);
-            cout<<SNAKE_BODY;
+            cout << SNAKE_BODY;
         }
 
         gotoxy(food.xCoord, food.yCoord);
-        cout<<FOOD;
+        cout << FOOD;
 
         displayCurrentScore();
     }
 
-    bool update(){
-       bool isAlive = snake->move(food);
-       if(isAlive == false)
-       {
-           return false;
-       }
+    bool update() {
+        bool alive = snake->move(food);
+        if (!alive) return false;
 
-        if(food.xCoord == snake->body[0].xCoord && food.yCoord == snake->body[0].yCoord)
-        {
+        if (snake->body[0].xCoord == food.xCoord && snake->body[0].yCoord == food.yCoord) {
             score++;
             spawnFood();
         }
-       return true;
+
+        return true;
     }
 
-    void getInput(){
-        if(kbhit())
-        {
+    void getInput() {
+        if (kbhit()) {
             int key = getch();
-            if(key == 'w' || key == 'W')
-            {
-                snake->changeDirection(DIR_UP);
-            }
-            else if(key == 'a' || key == 'A')
-            {
-                snake->changeDirection(DIR_LEFT);
-            }
-            else if(key == 's' || key == 'S')
-            {
-                snake->changeDirection(DIR_DOWN);
-            }
-            else if(key == 'd' || key == 'D')
-            {
-                snake->changeDirection(DIR_RIGHT);
+            switch (key) {
+                case 'w':
+                case 'W':
+                    snake->changeDirection(DIR_UP);
+                    break;
+                case 'a':
+                case 'A':
+                    snake->changeDirection(DIR_LEFT);
+                    break;
+                case 's':
+                case 'S':
+                    snake->changeDirection(DIR_DOWN);
+                    break;
+                case 'd':
+                case 'D':
+                    snake->changeDirection(DIR_RIGHT);
+                    break;
             }
         }
     }
-
 };
 
-int main(){
-    srand(time(0));
+int main() {
+    srand(static_cast<unsigned int>(time(0)));
     initScreen();
-    Board *board = new Board();
-    while(board->update())
-    {
-        board->getInput();
-        board->draw();
-        Sleep(100);
+
+    Board* gameBoard = new Board();
+
+    while (gameBoard->update()) {
+        gameBoard->getInput();
+        gameBoard->draw();
+        Sleep(100); // Delay for game speed
     }
 
-    cout<<"Game over"<<endl;
-    cout<<"Final score is :"<<board->getScore();
+    cout << "\nGame Over!\n";
+    cout << "Final Score: " << gameBoard->getScore() << endl;
+
+    delete gameBoard;
     return 0;
 }
