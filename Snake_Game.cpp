@@ -1,5 +1,5 @@
 #include<bits/stdc++.h>
-#include<conio.h> // key press kbhit
+#include<conio.h> 
 #include<windows.h>
 
 using namespace std;
